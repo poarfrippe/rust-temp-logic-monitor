@@ -48,6 +48,6 @@ fn impl_monitor_macro2(subformulae: Subformulae) -> TokenStream {
     let expr_block = format!("{{{}}}",s);
     // let ret = quote! {|| #expr_block};
     let parsed: syn::Expr = syn::parse_str(expr_block.as_str()).expect("invalide formula evaluation code");
-    let ret = quote! {|| -> Result<(), String> #parsed};
+    let ret = quote! {|| -> Result<(), &str> #parsed};
     ret.into()
 }

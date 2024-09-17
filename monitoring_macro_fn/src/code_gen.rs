@@ -69,36 +69,22 @@ pub fn gen_monitor2(subformulae: Subformulae) -> String {
 
     //evaluation loop
     code.push_str(&format!("for {INDEX_NAME} in 1..{TRACELENGHT_NAME} {{"));
-    for j in 0..=(m-1) {
-        let i = (m-1)-j;
-        code.push_str(&format!("{NOW_NAME}[{i}] = "));
-        code.push_str(&assign_from_formula(&subformulae, NOW_NAME, PRE_NAME, i, INDEX_NAME, false));
-        code.push_str(";\n");
-    }
-
-    code.push_str(&format!("if {NOW_NAME}[0] == false {{\
-        return Err(format!(\"violation at trace index: {{{INDEX_NAME}}}\"));\
-    }}\n"));
-    code.push_str(&format!("{PRE_NAME} = {NOW_NAME}.clone()\n"));
+        for j in 0..=(m-1) {
+            let i = (m-1)-j;
+            code.push_str(&format!("{NOW_NAME}[{i}] = "));
+            code.push_str(&assign_from_formula(&subformulae, NOW_NAME, PRE_NAME, i, INDEX_NAME, false));
+            code.push_str(";\n");
+        }
+        code.push_str(&format!("{PRE_NAME} = {NOW_NAME}.clone()\n"));
     code.push_str("}\n");
 
-
-    //not entering loop
-    //noch schauen ob das schun so sein soll?
-    code.push_str(&format!("if {TRACELENGHT_NAME} < 2 {{"));
-    code.push_str(&format!("if {PRE_NAME}[0] == true {{\
-            return Ok(());\
-        }}\n"));
-    code.push_str(&format!("else {{\
-            return Err(String::from(\"violation at trace index: 0\"));\
-        }}\n"));
-    code.push_str("}\n");
-
-    code.push_str(&format!("if {NOW_NAME}[0] == true {{\
-        return Ok(());\
+    //check PRE because when not entering loop, NOW is not set, and when entering, NOW is cloned into PRE
+    code.push_str(&format!("if {PRE_NAME}[0] == false {{\
+        Err(\"formula violated\")\
     }}\n"));
-
-    code.push_str("Err(String::from(\"unexpected error: end closure reached\"))");
+    code.push_str("else {");
+        code.push_str("Ok(())");
+    code.push_str("}");
 
     code
 }
