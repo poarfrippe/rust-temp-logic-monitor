@@ -1,0 +1,1 @@
+ cargo rustc --profile=check --test integration_test -- -Zunpretty=expanded
