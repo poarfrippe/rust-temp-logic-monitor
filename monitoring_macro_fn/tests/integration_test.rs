@@ -37,7 +37,7 @@ fn example() {
     licht_an.add_snapshotter(&s);
 
 
-    // wenn tuer zu, dann muss davor licht ausgeschalten werden.
+    // wenn tuer zu, dann muss davor licht ausgeschalten sein.
     let tester = monitor!(Implies(Not(tuer_offen), Prev(Not(licht_an))));
 
     println!("sagt davor:");

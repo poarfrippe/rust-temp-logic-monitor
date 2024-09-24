@@ -1,4 +1,3 @@
 /target
 /monitoring_macro_fn/target
 /.idea
-/monitoring_macro_fn/expanded_tests.rs
