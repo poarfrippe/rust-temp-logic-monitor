@@ -138,7 +138,7 @@ fn assign_from_formula(subformulae: &Vec<PtLTL>, now_name: &str, pre_name: &str,
             let x_sub_index = get_subformula_index(subformulae, x, formula_index);
             let y_sub_index = get_subformula_index(subformulae, y, formula_index);
             if is_init {
-                //because init and string Since requires y to be true sometime
+                //because init and strong Since requires y to be true sometime
                 code.push_str(&format!("{pre_name}[{y_sub_index}]"));
             } else {
                 //either y holds or if not, in order to make since true, x must hold now and whole since must have been true previously.
