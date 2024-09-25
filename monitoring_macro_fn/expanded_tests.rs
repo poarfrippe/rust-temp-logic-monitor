@@ -3,8 +3,10 @@
 use std::prelude::rust_2021::*;
 #[macro_use]
 extern crate std;
-use monitoring_macro_fn::{monitor, monitor2};
+use std::cell::RefCell;
+use monitoring_macro_fn::{monitor, monitor2, monitor_incr};
 use monitoring::{TracedBool, Snapshotter};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 extern crate test;
 #[cfg(test)]
@@ -22,9 +24,9 @@ pub const single_var: test::TestDescAndFn =
             ignore: false,
             ignore_message: ::core::option::Option::None,
             source_file: "tests/integration_test.rs",
-            start_line: 5usize,
+            start_line: 7usize,
             start_col: 4usize,
-            end_line: 5usize,
+            end_line: 7usize,
             end_col: 14usize,
             compile_fail: false,
             no_run: false,
@@ -42,13 +44,45 @@ fn single_var() {
 
 
 
-            // wenn tuer zu, dann muss davor licht ausgeschalten werden.
+            // wenn tuer zu, dann muss davor licht ausgeschalten sein.
 
 
 
             // true weil in previous war licht noch false
 
             // jetzt false, weil previouse war licht an
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //Glob(x)
+
+            //would need unsafe block on access, if multi threaded.
+            //expands to some unsafe code...?
+
+            //load from statics
+
+
+
+            //only in first call. after pre should be optained from static PRE
+
+            //write back to statics
+
+            //chech pre instead of now to avoid missing violation in traces with lenght=1. on traces >1 now is coppied into pre anyways.
+
 
 
 
@@ -78,7 +112,7 @@ fn single_var() {
                 for index in 1..tracelength {
                     now[1] = x.get_trace()[index];
                     now[0] = now[1] && pre[0];
-                    pre = now.clone()
+                    pre = now.clone();
                 }
                 if pre[0] == false { Err("formula violated") } else { Ok(()) }
             };
@@ -136,9 +170,9 @@ pub const example: test::TestDescAndFn =
             ignore: false,
             ignore_message: ::core::option::Option::None,
             source_file: "tests/integration_test.rs",
-            start_line: 31usize,
+            start_line: 33usize,
             start_col: 4usize,
-            end_line: 31usize,
+            end_line: 33usize,
             end_col: 11usize,
             compile_fail: false,
             no_run: false,
@@ -180,7 +214,7 @@ fn example() {
                                 ::std::io::_print(format_args!("propertiy violated\n"));
                             };
                         }
-                    pre = now.clone()
+                    pre = now.clone();
                 }
             };
     { ::std::io::_print(format_args!("sagt davor:\n")); };
@@ -209,9 +243,9 @@ pub const test_propositional: test::TestDescAndFn =
             ignore: false,
             ignore_message: ::core::option::Option::None,
             source_file: "tests/integration_test.rs",
-            start_line: 66usize,
+            start_line: 68usize,
             start_col: 4usize,
-            end_line: 66usize,
+            end_line: 68usize,
             end_col: 22usize,
             compile_fail: false,
             no_run: false,
@@ -242,7 +276,7 @@ fn test_propositional() {
                     now[2] = y.get_trace()[index];
                     now[1] = x.get_trace()[index];
                     now[0] = now[1] && now[2];
-                    pre = now.clone()
+                    pre = now.clone();
                 }
                 if pre[0] == false { Err("formula violated") } else { Ok(()) }
             };
@@ -259,7 +293,7 @@ fn test_propositional() {
                     now[2] = y.get_trace()[index];
                     now[1] = x.get_trace()[index];
                     now[0] = now[1] || now[2];
-                    pre = now.clone()
+                    pre = now.clone();
                 }
                 if pre[0] == false { Err("formula violated") } else { Ok(()) }
             };
@@ -276,7 +310,7 @@ fn test_propositional() {
                     now[2] = y.get_trace()[index];
                     now[1] = x.get_trace()[index];
                     now[0] = !now[1] || now[2];
-                    pre = now.clone()
+                    pre = now.clone();
                 }
                 if pre[0] == false { Err("formula violated") } else { Ok(()) }
             };
@@ -291,7 +325,7 @@ fn test_propositional() {
                 for index in 1..tracelength {
                     now[1] = x.get_trace()[index];
                     now[0] = !now[1];
-                    pre = now.clone()
+                    pre = now.clone();
                 }
                 if pre[0] == false { Err("formula violated") } else { Ok(()) }
             };
@@ -453,9 +487,9 @@ pub const test_since: test::TestDescAndFn =
             ignore: false,
             ignore_message: ::core::option::Option::None,
             source_file: "tests/integration_test.rs",
-            start_line: 108usize,
+            start_line: 110usize,
             start_col: 4usize,
-            end_line: 108usize,
+            end_line: 110usize,
             end_col: 14usize,
             compile_fail: false,
             no_run: false,
@@ -468,51 +502,288 @@ pub const test_since: test::TestDescAndFn =
 fn test_since() {}
 extern crate test;
 #[cfg(test)]
-#[rustc_test_marker = "non_existing_variable"]
-pub const non_existing_variable: test::TestDescAndFn =
+#[rustc_test_marker = "test_static"]
+pub const test_static: test::TestDescAndFn =
     test::TestDescAndFn {
         desc: test::TestDesc {
-            name: test::StaticTestName("non_existing_variable"),
+            name: test::StaticTestName("test_static"),
             ignore: false,
             ignore_message: ::core::option::Option::None,
             source_file: "tests/integration_test.rs",
-            start_line: 113usize,
+            start_line: 115usize,
             start_col: 4usize,
-            end_line: 113usize,
-            end_col: 25usize,
+            end_line: 115usize,
+            end_col: 15usize,
             compile_fail: false,
             no_run: false,
             should_panic: test::ShouldPanic::No,
             test_type: test::TestType::IntegrationTest,
         },
         testfn: test::StaticTestFn(#[coverage(off)] ||
-                test::assert_test_result(non_existing_variable())),
+                test::assert_test_result(test_static())),
     };
-fn non_existing_variable() {
-    let x = TracedBool::new(false);
-    let m =
-        ||
+fn test_static() {
+    let x = TracedBool::new(true);
+    let s =
+        Snapshotter::new(<[_]>::into_vec(#[rustc_box] ::alloc::boxed::Box::new([&x])));
+    x.add_snapshotter(&s);
+    let formula =
+        || -> Result<(), &str>
             {
-                let tracelength = x.get_trace().len();
-                let mut pre = ::alloc::vec::from_elem(false, 1);
-                let mut now = ::alloc::vec::from_elem(false, 1);
-                pre[0] = x.get_trace()[0];
-                for index in 1..tracelength {
-                    now[0] = x.get_trace()[index];
-                    if now[0] == false {
-                            {
-                                ::std::io::_print(format_args!("propertiy violated\n"));
-                            };
+                static START_AT: AtomicUsize = AtomicUsize::new(1);
+                const PRE: ::std::thread::LocalKey<RefCell<Vec<bool>>> =
+                    {
+                        #[inline]
+                        fn __init() -> RefCell<Vec<bool>> {
+                            RefCell::new(::alloc::vec::from_elem(false, 2))
                         }
-                    pre = now.clone()
+                        unsafe {
+                            use ::std::mem::needs_drop;
+                            use ::std::thread::LocalKey;
+                            use ::std::thread::local_impl::LazyStorage;
+                            LocalKey::new(const {
+                                        if needs_drop::<RefCell<Vec<bool>>>() {
+                                                |init|
+                                                    {
+                                                        #[thread_local]
+                                                        static VAL: LazyStorage<RefCell<Vec<bool>>, ()> =
+                                                            LazyStorage::new();
+                                                        VAL.get_or_init(init, __init)
+                                                    }
+                                            } else {
+                                               |init|
+                                                   {
+                                                       #[thread_local]
+                                                       static VAL: LazyStorage<RefCell<Vec<bool>>, !> =
+                                                           LazyStorage::new();
+                                                       VAL.get_or_init(init, __init)
+                                                   }
+                                           }
+                                    })
+                        }
+                    };
+                ;
+                let start_at = START_AT.load(Ordering::Relaxed);
+                let mut pre = PRE.with(|v| v.borrow_mut().to_vec());
+                let mut now = ::alloc::vec::from_elem(false, 2);
+                let tracelength = x.get_trace().len();
+                if start_at == 1 {
+                        pre[1] = x.get_trace()[0];
+                        pre[0] = pre[1];
+                    }
+                for index in start_at..tracelength {
+                    now[1] = x.get_trace()[index];
+                    now[0] = now[1] && pre[0];
+                    pre = now.clone();
                 }
+                START_AT.store(tracelength, Ordering::Relaxed);
+                PRE.with(|v| v.replace(pre.clone()));
+                if pre[0] == false { Err("formula violated") } else { Ok(()) }
             };
-    m();
+    s.snapshot();
+    s.snapshot();
+    { ::std::io::_print(format_args!("\nafter init with true\n")); };
+    match (&formula(), &Ok(())) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    s.snapshot();
+    s.snapshot();
+    {
+        ::std::io::_print(format_args!("\nsome more snapshots. still true\n"));
+    };
+    match (&formula(), &Ok(())) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    x.not();
+    { ::std::io::_print(format_args!("\nafter not\n")); };
+    match (&formula(), &Err("formula violated")) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    x.assign_true();
+    { ::std::io::_print(format_args!("\nafter reassign true\n")); };
+    match (&formula(), &Err("formula violated")) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    x.assign_true();
+    { ::std::io::_print(format_args!("\nafter reassign true\n")); };
+    match (&formula(), &Err("formula violated")) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+}
+extern crate test;
+#[cfg(test)]
+#[rustc_test_marker = "test_incremental"]
+pub const test_incremental: test::TestDescAndFn =
+    test::TestDescAndFn {
+        desc: test::TestDesc {
+            name: test::StaticTestName("test_incremental"),
+            ignore: false,
+            ignore_message: ::core::option::Option::None,
+            source_file: "tests/integration_test.rs",
+            start_line: 187usize,
+            start_col: 4usize,
+            end_line: 187usize,
+            end_col: 20usize,
+            compile_fail: false,
+            no_run: false,
+            should_panic: test::ShouldPanic::No,
+            test_type: test::TestType::IntegrationTest,
+        },
+        testfn: test::StaticTestFn(#[coverage(off)] ||
+                test::assert_test_result(test_incremental())),
+    };
+fn test_incremental() {
+    let x = TracedBool::new(true);
+    let s =
+        Snapshotter::new(<[_]>::into_vec(#[rustc_box] ::alloc::boxed::Box::new([&x])));
+    x.add_snapshotter(&s);
+    let monitor_incr =
+        || -> Result<(), &str>
+            {
+                static START_AT: AtomicUsize = AtomicUsize::new(1);
+                const PRE: ::std::thread::LocalKey<RefCell<Vec<bool>>> =
+                    {
+                        #[inline]
+                        fn __init() -> RefCell<Vec<bool>> {
+                            RefCell::new(::alloc::vec::from_elem(false, 2))
+                        }
+                        unsafe {
+                            use ::std::mem::needs_drop;
+                            use ::std::thread::LocalKey;
+                            use ::std::thread::local_impl::LazyStorage;
+                            LocalKey::new(const {
+                                        if needs_drop::<RefCell<Vec<bool>>>() {
+                                                |init|
+                                                    {
+                                                        #[thread_local]
+                                                        static VAL: LazyStorage<RefCell<Vec<bool>>, ()> =
+                                                            LazyStorage::new();
+                                                        VAL.get_or_init(init, __init)
+                                                    }
+                                            } else {
+                                               |init|
+                                                   {
+                                                       #[thread_local]
+                                                       static VAL: LazyStorage<RefCell<Vec<bool>>, !> =
+                                                           LazyStorage::new();
+                                                       VAL.get_or_init(init, __init)
+                                                   }
+                                           }
+                                    })
+                        }
+                    };
+                ;
+                let start_at = START_AT.load(Ordering::Relaxed);
+                let mut pre = PRE.with(|v| v.borrow_mut().to_vec());
+                let tracelength = x.get_trace().len();
+                let mut now = ::alloc::vec::from_elem(false, 2);
+                if start_at == 1 {
+                        pre[1] = x.get_trace()[0];
+                        pre[0] = pre[1];
+                    }
+                for index in start_at..tracelength {
+                    now[1] = x.get_trace()[index];
+                    now[0] = now[1] && pre[0];
+                    pre = now.clone();
+                }
+                START_AT.store(tracelength, Ordering::Relaxed);
+                PRE.with(|v| v.replace(pre.clone()));
+                if pre[0] == false { Err("formula violated") } else { Ok(()) }
+            };
+    s.snapshot();
+    s.snapshot();
+    { ::std::io::_print(format_args!("\nafter init with true\n")); };
+    match (&monitor_incr(), &Ok(())) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    s.snapshot();
+    s.snapshot();
+    {
+        ::std::io::_print(format_args!("\nsome more snapshots. still true\n"));
+    };
+    match (&monitor_incr(), &Ok(())) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    x.not();
+    { ::std::io::_print(format_args!("\nafter not\n")); };
+    match (&monitor_incr(), &Err("formula violated")) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    x.assign_true();
+    { ::std::io::_print(format_args!("\nafter reassign true\n")); };
+    match (&monitor_incr(), &Err("formula violated")) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
+    x.assign_true();
+    { ::std::io::_print(format_args!("\nafter reassign true\n")); };
+    match (&monitor_incr(), &Err("formula violated")) {
+        (left_val, right_val) => {
+            if !(*left_val == *right_val) {
+                    let kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, &*left_val,
+                        &*right_val, ::core::option::Option::None);
+                }
+        }
+    };
 }
 #[rustc_main]
 #[coverage(off)]
 pub fn main() -> () {
     extern crate test;
-    test::test_main_static(&[&example, &non_existing_variable, &single_var,
-                    &test_propositional, &test_since])
+    test::test_main_static(&[&example, &single_var, &test_incremental,
+                    &test_propositional, &test_since, &test_static])
 }

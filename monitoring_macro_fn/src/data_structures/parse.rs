@@ -1,7 +1,7 @@
 use syn::parse::ParseStream;
 use syn::token::{Paren, Token};
 use crate::data_structures::PtLTL;
-use crate::{INDEX_NAME, NOW_NAME, PRE_NAME, TRACELENGHT_NAME};
+use crate::{INDEX_NAME, NOW_NAME, PRE_NAME, START_AT_NAME, STATIC_PRE_NAME, STATIC_START_AT_NAME, TRACELENGHT_NAME};
 
 pub fn parse_recursive (input: ParseStream) -> syn::Result<PtLTL> {
     let id;
@@ -12,7 +12,8 @@ pub fn parse_recursive (input: ParseStream) -> syn::Result<PtLTL> {
     match id.to_string().as_str() {
         //check weatehr id is some var name used in closure, if so return error!
         varname
-        if varname == TRACELENGHT_NAME || varname == PRE_NAME || varname == NOW_NAME || varname == INDEX_NAME => {
+        if varname == TRACELENGHT_NAME || varname == PRE_NAME || varname == NOW_NAME
+            || varname == INDEX_NAME || varname == STATIC_START_AT_NAME || varname == START_AT_NAME || varname == STATIC_PRE_NAME  => {
             return Err(syn::Error::new(
                 id.span(),
                 format!("Illegal name '{varname}'. Conflicts with formula evaluation code.")
