@@ -1,42 +1,19 @@
-use std::cell::{RefCell};
+use std::cell::RefCell;
 use monitoring_macro_fn::{monitor, monitor2, monitor_incr};
-use monitoring::{TracedBool, Snapshotter};
+use monitoring::{RcTracedBool, RcSnapshotter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[test]
-fn single_var() {
-    //Setup
-    let x = TracedBool::new(true);
-    let s = Snapshotter::new(vec![&x]);
-    x.add_snapshotter(&s);
-
-    println!("Globally");
-    let formula = monitor2!(Glob(x));
-
-    println!("\nafter init with true");
-    assert_eq!(formula(), Ok(()));
-
-    x.not();
-    println!("\nafter not");
-    assert_eq!(formula(), Err("formula violated"));
-
-    x.assign_true();
-    println!("\nafter reassign true");
-    assert_eq!(formula(), Err("formula violated"));
-
-    x.assign_true();
-    println!("\nafter reassign true");
-    assert_eq!(formula(), Err("formula violated"));
-}
-
-#[test]
 fn example() {
-    let licht_an = TracedBool::new(true);
-    let tuer_offen = TracedBool::new(true);
+    let licht_an = RcTracedBool::new(true);
+    let tuer_offen = RcTracedBool::new(true);
 
-    let s = Snapshotter::new(vec![&licht_an, &tuer_offen]);
-    tuer_offen.add_snapshotter(&s);
-    licht_an.add_snapshotter(&s);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&licht_an), 
+        RcTracedBool::clone(&tuer_offen)
+    ]);
+    tuer_offen.add_snapshotter(RcSnapshotter::clone(&s));
+    licht_an.add_snapshotter(RcSnapshotter::clone(&s));
 
 
     // wenn tuer zu, dann muss davor licht ausgeschalten sein.
@@ -67,11 +44,14 @@ fn example() {
 #[test]
 fn test_propositional() {
 
-    let x = TracedBool::new(false);
-    let y = TracedBool::new(true);
-    let s = Snapshotter::new(vec![&x, &y]);
-    x.add_snapshotter(&s);
-    y.add_snapshotter(&s);
+    let x = RcTracedBool::new(false);
+    let y = RcTracedBool::new(true);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x),
+        RcTracedBool::clone(&y)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
+    y.add_snapshotter(RcSnapshotter::clone(&s));
 
     let x_and_y = monitor2!(And(x,y));
     let x_or_y = monitor2!(Or(x,y));
@@ -107,16 +87,111 @@ fn test_propositional() {
 }
 
 #[test]
+fn test_glob() {
+    //Setup
+    let x = RcTracedBool::new(true);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
+
+    println!("Globally");
+    let formula = monitor2!(Glob(x));
+
+    assert_eq!(formula(), Ok(()));
+
+    x.not();
+    assert_eq!(formula(), Err("formula violated"));
+
+    x.assign_true();
+    assert_eq!(formula(), Err("formula violated"));
+
+    x.assign_true();
+    assert_eq!(formula(), Err("formula violated"));
+}
+
+#[test]
 fn test_since() {
+    let x = RcTracedBool::new(true);
+    let y = RcTracedBool::new(false);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x),
+        RcTracedBool::clone(&y)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
+    y.add_snapshotter(RcSnapshotter::clone(&s));
+
+    let x_since_y = monitor2!(Since(x,y));
+
+    //because strong since
+    assert_eq!(x_since_y(), Err("formula violated"));
+
+    y.assign_true();
+    assert_eq!(x_since_y(), Ok(()));
+
+    y.assign_false();
+    x.assign_false();
+    assert_eq!(x_since_y(), Err("formula violated"));
+
+}
+
+#[test]
+fn test_once() {
+    //Setup
+    let x = RcTracedBool::new(false);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
+
+    let formula = monitor2!(Once(x));
+
+    assert_eq!(formula(), Err("formula violated"));
+
+    x.assign_true();
+    assert_eq!(formula(), Ok(()));
+
+    x.assign_false();
+    assert_eq!(formula(), Ok(()));
+
+    s.snapshot();
+    assert_eq!(formula(), Ok(()));
+
+}
+
+#[test]
+fn test_prev() {
+    //Setup
+    let x = RcTracedBool::new(true);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
+
+    let formula = monitor2!(Prev(x));
+
+    //no prev and we assume constant.
+    assert_eq!(formula(), Ok(()));
+
+    x.assign_false();
+    assert_eq!(formula(), Ok(()));
+
+    x.assign_true();
+    assert_eq!(formula(), Err("formula violated"));
+
+    s.snapshot();
+    assert_eq!(formula(), Ok(()));
 
 }
 
 #[test]
 fn test_static() {
 
-    let x = TracedBool::new(true);
-    let s = Snapshotter::new(vec![&x]);
-    x.add_snapshotter(&s);
+    let x = RcTracedBool::new(true);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
 
 
     //Glob(x)
@@ -185,9 +260,11 @@ fn test_static() {
 
 #[test]
 fn test_incremental(){
-    let x = TracedBool::new(true);
-    let s = Snapshotter::new(vec![&x]);
-    x.add_snapshotter(&s);
+    let x = RcTracedBool::new(true);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
 
     let monitor_incr = monitor_incr!(Glob(x));
 
@@ -216,31 +293,27 @@ fn test_incremental(){
     println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
 }
 
 #[test]
 fn test_incremental_not(){
-    let x = TracedBool::new(true);
-    let s = Snapshotter::new(vec![&x]);
-    x.add_snapshotter(&s);
+    let x = RcTracedBool::new(true);
+    let s = RcSnapshotter::new(vec![
+        RcTracedBool::clone(&x)
+    ]);
+    x.add_snapshotter(RcSnapshotter::clone(&s));
 
     let monitor_incr = monitor2!(Glob(x));
 
@@ -269,22 +342,15 @@ fn test_incremental_not(){
     println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
 
-    println!("\nafter reassign true");
     assert_eq!(monitor_incr(), Err("formula violated"));
-
 }

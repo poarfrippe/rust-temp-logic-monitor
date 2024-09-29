@@ -94,6 +94,9 @@ pub fn gen_monitor_incr(subformulae: Subformulae) -> String {
     let subformulae = subformulae.formulae;
     let m = subformulae.len();
 
+    code.push_str("use std::sync::atomic::{AtomicUsize, Ordering};\n");
+    code.push_str("use std::cell::RefCell;\n");
+
     code.push_str(&format!("static {STATIC_START_AT_NAME}: AtomicUsize = AtomicUsize::new(1);\n"));
 
     //would need unsafe block on access, if multi threaded.
