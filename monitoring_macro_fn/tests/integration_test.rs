@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use monitoring_macro_fn::{monitor, monitor2, monitor_incr};
-use monitoring::{RcTracedBool, RcSnapshotter};
+use monitoring::{RcTracedBool, RcSnapshotter, setup_snapshotter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[test]
@@ -353,4 +353,17 @@ fn test_incremental_not(){
     assert_eq!(monitor_incr(), Err("formula violated"));
 
     assert_eq!(monitor_incr(), Err("formula violated"));
+}
+
+#[test]
+fn macro_rule_test() {
+
+    let balance_below_zero  = RcTracedBool::new(false);
+    let deposit_happens     = RcTracedBool::new(false);
+    let withdraw_happens    = RcTracedBool::new(false);
+
+    setup_snapshotter!(balance_below_zero, deposit_happens, withdraw_happens);
+
+
+    //Just looking at expanded code manually to verify weather macro works
 }

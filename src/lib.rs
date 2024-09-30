@@ -2,6 +2,21 @@ use std::cell::RefCell;
 use std::ops::{BitAndAssign, BitOrAssign, BitXorAssign, Deref};
 use std::rc::Rc;
 
+///takes any number of RcTracedBool, creates a snapshotter with all of them and connects every RcTracedBool with the snapshotter
+#[macro_export]
+macro_rules! setup_snapshotter {
+    ($($t:ident),+) => {
+        let snapshotter = RcSnapshotter::new(vec![
+            $(
+                RcTracedBool::clone(&$t),
+            )+
+        ]);
+        $(
+            $t.add_snapshotter(RcSnapshotter::clone(&snapshotter));
+        )+
+    };
+}
+
 pub struct RcTracedBool (Rc<TracedBool>);
 
 impl Deref for RcTracedBool {
