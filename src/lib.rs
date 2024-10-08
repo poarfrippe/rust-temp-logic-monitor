@@ -102,6 +102,11 @@ impl Snapshotter {
             i.trace_current();
         }
     }
+    pub fn clear_trace (&self) {
+        for i in self.to_snapshot.iter() {
+            i.trace.replace(vec![]);
+        }
+    }
 }
 
 pub struct RcSnapshotter(Rc<Snapshotter>);
